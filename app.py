@@ -70,6 +70,7 @@ class ProductSchema(ma.SQLAlchemyAutoSchema):
 class OrderSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Orders
+        include_fk = True
         
 customer_schema = CustomerSchema()
 customers_schema = CustomerSchema(many=True)
@@ -152,7 +153,7 @@ def add_product():
     except ValidationError as e:
         return jsonify(e.messages), 400
     
-    new_product = Products(name=product_data["name"], price=product_data["price"])
+    new_product = Products(product_name=product_data["product_name"], price=product_data["price"])
     db.session.add(new_product)
     db.session.commit()
     
@@ -188,7 +189,7 @@ def update_product(id):
     except ValidationError as e:
         return jsonify(e.messages), 400
     
-    product.name = product_data['name']
+    product.product_name = product_data['product_name']
     product.price = product_data['price']
 
     db.session.commit()
@@ -215,7 +216,7 @@ def add_order():
     except ValidationError as e:
         return jsonify(e.messages), 400
     
-    new_order = Orders(order_date=order_data["order_date"], user_id=order_data["user_id"])
+    new_order = Orders(order_date=order_data["order_date"], customer_id=order_data["customer_id"])
     db.session.add(new_order)
     db.session.commit()
     
@@ -279,13 +280,13 @@ def delete_product_from_order(order_id, product_id):
 
     return jsonify({"message": f"Successfully deleted product {product_id} from order {order_id}"}), 200
 
-@app.route("/orders/users/<int:user_id>", methods=["GET"])
-def get_user_orders(user_id):
-    query = select(Orders).where(Orders.customer_id == user_id)
+@app.route("/orders/customers/<int:customer_id>", methods=["GET"])
+def get_customer_orders(customer_id):
+    query = select(Orders).where(Orders.customer_id == customer_id)
     result = db.session.execute(query).scalars().all()
 
     if not result:
-        return jsonify({"error": f"No orders found for user {user_id}"}), 404
+        return jsonify({"error": f"No orders found for customer {customer_id}"}), 404
 
     return orders_schema.jsonify(result)
 
